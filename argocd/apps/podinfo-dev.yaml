@@ -1,0 +1,19 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: podinfo-dev
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io   # Deleting the app deletes its resources
+spec:
+  project: shop
+  source:
+    repoURL: https://github.com/Rajendra0609/argocd-labs.git
+    targetRevision: main
+    path: apps/podinfo/overlays/dev
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: shop-dev
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true

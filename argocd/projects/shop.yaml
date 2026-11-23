@@ -1,0 +1,38 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: shop
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"   # Create the project before its Applications
+spec:
+  description: Shop team applications
+  sourceRepos:
+    - https://github.com/Rajendra0609/argocd-labs.git
+  destinations:
+    - server: https://kubernetes.default.svc
+      namespace: 'shop-*'
+  clusterResourceWhitelist:
+    - group: ''
+      kind: Namespace
+  orphanedResources:
+    warn: true
+    ignore:                               # Objects Kubernetes creates in every namespace
+      - kind: ConfigMap
+        name: kube-root-ca.crt
+      - kind: ServiceAccount
+        name: default
+  roles:
+    - name: ci-deployer
+      description: CI pipeline - may deploy non-prod only
+      policies:
+        - p, proj:shop:ci-deployer, applications, get, shop/*, allow
+        - p, proj:shop:ci-deployer, applications, sync, shop/podinfo-dev, allow
+        - p, proj:shop:ci-deployer, applications, sync, shop/podinfo-staging, allow
+    - name: release-manager
+      description: Humans allowed to release to production
+      policies:
+        - p, proj:shop:release-manager, applications, get, shop/*, allow
+        - p, proj:shop:release-manager, applications, sync, shop/podinfo-prod, allow
+      groups:
+        - shop-release-managers           # SSO group mapping (Guide §14.3)
